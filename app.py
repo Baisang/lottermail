@@ -1,12 +1,56 @@
+from celery import Celery
+from celery.schedules import crontab
 from flask import Flask, abort, render_template, request
 from flask_sqlalchemy import SQLAlchemy
+from lottermail import send_message, scrape_lottery
 import os
 
+### Configs
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/lottermail.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['CELERY_BROKER_URL'] = 'amqp://myuser:mypassword@127.0.1.1/myvhost'
 db = SQLAlchemy(app)
 
+### Celery
+def make_celery(app):
+    # TODO: add a backend like redis/move from using rabbitmq to redis as broker
+    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+    celery.conf.update(app.config)
+    TaskBase = celery.Task
+    class ContextTask(TaskBase):
+        abstract = True
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
+    celery.Task = ContextTask
+    return celery
+
+celeryapp = make_celery(app)
+celeryapp.conf.timezone = "America/Los_Angeles"
+celeryapp.conf.beat_schedule = {
+    # Execute every day at 6:30am PST
+    'email-every-morning': {
+        'task': 'app.email',
+        'schedule': crontab(hour=6, minute=30)
+    }
+}
+
+@celeryapp.task(name='app.email')
+def email():
+    jackpot = scrape_lottery()
+    if jackpot > 0:
+        db = SQLAlchemy(app)
+        for user in User.query.all():
+            if jackpot >= user.threshold:
+                try:
+                    res = send_message(user.email, jackpot)
+                    return res
+                except Exception as e:
+                    print(e)
+                    continue
+
+### Models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True)
@@ -19,6 +63,7 @@ class User(db.Model):
     def __str__(self):
         return '{0} with threshold {1}'.format(self.email, self.threshold)
 
+### Endpoints
 @app.route('/')
 def index():
     return render_template('index.html')

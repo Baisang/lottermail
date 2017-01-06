@@ -8,11 +8,6 @@ MAILGUN_API_KEY = os.environ['MAILGUN_API_KEY']
 MAILGUN_SERVER = os.environ['MAILGUN_SERVER']
 MAILGUN_ENDPOINT = "https://api.mailgun.net/v3/{}/messages".format(MAILGUN_SERVER)
 
-# store email -> amount to notify mapping
-# amount value should be an integer
-# TODO: make this a database thing
-emails = {}
-
 def send_message(email, jackpot):
     jackpot = "$" + "{:,}".format(jackpot)
     return requests.post(
@@ -22,16 +17,6 @@ def send_message(email, jackpot):
               "to": email,
               "subject": "Today's Mega Millions Jackpot: " + jackpot,
               "text": "The Mega Millions Jackpot is " + jackpot + " dollars."})
-
-# def send_emails(jackpot):
-#     try:
-#         for email, amount in emails.items():
-#             if jackpot >= amount:
-#                 res = send_message(email, jackpot)
-#                 # should log res.status_code
-#     except Exception as e:
-#         print('Something went wrong during email sending.')
-#         print(e)
 
 def scrape_lottery():
     try:
