@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <title>Lottermail - Get lottery updates by email</title>
+  </head>
+  <body>
+    <h1>Lottermail</h1>
+    <p>Enter your email and the value of the jackpot you want to be notified at.
+      If the jackpot gets at or above the value you enter, we'll send you an email.
+      Feel free to opt out any time.
+    </p>
+    <form action="{{ url_for('add_email') }}" method=post>
+      <dl>
+        <dt>Email Address:
+          <dd><input type=text size=120 name=email>
+        <dt>Amount to be notified (in millions):
+          <dd><input type=number min="0" name=threshold>
+        <dd><input type=submit value=AddEmail>
+      </dl>
+    </form>
+  </body>
+</html>
