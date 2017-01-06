@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, abort, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 import os
 
@@ -16,8 +16,8 @@ class User(db.Model):
         self.email = email
         self.threshold = threshold
 
-    def __repr__(self):
-        return '<User {0}>: threshold {1}'.format(self.email, self.threshold)
+    def __str__(self):
+        return '{0} with threshold {1}'.format(self.email, self.threshold)
 
 @app.route('/')
 def index():
@@ -33,13 +33,29 @@ def add_email():
         if matching:
             matching.threshold = threshold
             db.session.commit()
-            return "OK updated " + str(user)
+            return "OK updated " + str(matching)
         user = User(email, threshold)
         db.session.add(user)
         db.session.commit()
         return "OK added " + str(user)
     except Exception as e:
         print(e)
+
+@app.route('/remove_email', methods=['GET'])
+def remove_email():
+    try:
+        email = request.args.get('email')
+        if not email:
+            return "Invalid URL"
+        matching = User.query.filter_by(email=email).first()
+        if matching:
+            db.session.delete(matching)
+            db.session.commit()
+            return email + " has been removed from the mailing list."
+        return email + " is not on our mailing list"
+    except Exception as e:
+        print(e)
+
 
 if __name__ == '__main__':
     app.run()
