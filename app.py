@@ -32,7 +32,7 @@ celeryapp.conf.beat_schedule = {
     # Execute every day at 6:30am PST
     'email-every-morning': {
         'task': 'app.email',
-        'schedule': crontab(hour=6, minute=30)
+        'schedule': crontab(hour=12+9, minute=43)
     }
 }
 
@@ -43,12 +43,15 @@ def email():
         db = SQLAlchemy(app)
         for user in User.query.all():
             if jackpot >= user.threshold:
-                try:
-                    res = send_message(user.email, jackpot)
-                    return res
-                except Exception as e:
-                    print(e)
-                    continue
+                send_email.apply_async(args=[user.email, jackpot])
+
+@celeryapp.task(name='app.send_email')
+def send_email(email, jackpot):
+    try:
+        res = send_message(email, jackpot)
+        print(res)
+    except Exception as e:
+        print(e)
 
 ### Models
 class User(db.Model):
@@ -103,4 +106,4 @@ def remove_email():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run('0.0.0.0')
