@@ -1,6 +1,12 @@
+Flask==0.12
+Jinja2==2.9.4
+MarkupSafe==0.23
+Werkzeug==0.11.15
 amqp==2.1.4
 billiard==3.5.0.2
 celery==4.0.2
+click==6.7
+itsdangerous==0.24
 kombu==4.0.2
 lxml==3.7.1
 pytz==2016.10
