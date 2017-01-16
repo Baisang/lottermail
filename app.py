@@ -6,10 +6,13 @@ from lottermail import send_message, scrape_lottery
 import os
 
 ### Configs
+RABBITPW = os.environ['RABBIT_PW']
+RABBITUSER = os.environ['RABBIT_USER']
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/lottermail.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['CELERY_BROKER_URL'] = 'amqp://myuser:mypassword@127.0.1.1/myvhost'
+app.config['CELERY_BROKER_URL'] = 'amqp://{}:{}@127.0.1.1/myvhost'.format(RABBITUSER, RABBITPW)
 db = SQLAlchemy(app)
 
 ### Celery
